@@ -1,0 +1,413 @@
+# HomeKit Secure Video Unofficial Specification
+
+## 1. Overview
+
+### Service Definitions
+
+#### Cameras
+
+HomeKit Secure-Video cameras need to expose the same services as normal cameras with the following changes: 
+
+* Every `RTPStreamManagement` service must add the `Active` characteristic
+(This is used to indicate that the camera is fully turned off)
+* The required amount of `RTPStreamManagement` services was dropped down from two to one.
+* The `MotionSensor` service is required (to indicate movement and thus a start and stop of a recording)
+* The `CameraOperatingMode` service is required
+* The `DataStreamManagement` service is required (to initiate HomeKit Data Stream communication)
+* The `CameraRecordingManagement` service is required. It needs to be linked to the `MotionSensor` and `DataStreamManagement`
+
+#### Doorbells
+
+HomeKit Secure-Video doorbells need to expose the same services as normal doorbells and secure-video cameras
+with the following additional requirements:
+
+* The `CameraRecordingManagement` service (probably) needs to be linked to the `Doorbell` service.
+
+### Active states
+
+Every Secure-Video enabled camera can be set to four different states: `Off`, `Detect Activity`, `Stream`
+and `Stream & Allow Recording`.
+
+| Camera-States            | RTPStreamManagement Active | CameraOperatingMode HomeKitCameraActive | CameraRecordingManagement Active | 
+| :----------------------: | :---: | :---: | :---: |
+| Off                      | false | false | false |
+| Detect Activity          | false  | true | false |
+| Stream                   | true  | true  | false |
+| Stream & Allow Recording | true  | true  | true  |
+
+### Recording requirements
+
+* The camera needs so support basic motion analysis
+* The camera needs to support encoding, buffering and transmitting fragmented MP4 - Pretty similar to Section 3.3 
+[RFC 8216](https://tools.ietf.org/html/rfc8216#section-3.3) (HLS). The RFC refers to
+[ISO/IEC 14496-12 ISO base media file format](https://mpeg.chiariglione.org/standards/mpeg-4/iso-base-media-file-format/text-isoiec-14496-12-5th-edition).  
+How exactly the data is transmitted can be read
+in the [HDS Packet Formats](#4-homekit-data-stream-packet-formats) section and the [Flow of events](#5-flow-of-events)
+section.
+* Supported video codecs are: h.264, h.265
+* Supported audio codecs are: AAC-LC, AAC-ELD
+* Supported resolutions:
+    * 640x480
+    * 1024x768
+    * 1280x960
+    * 2048x1536
+    * 640x360
+    * 1280x720
+    * 1920x1080
+    * 3840x2160
+
+## 2. Services
+
+### 2.1 CameraOperatingMode
+
+| Property                  | Value                                |
+| ------------------------- | ------------------------------------ |
+| UUID                      | 0000021A-0000-1000-8000-0026BB765291 |
+| Type                      | public.hap.service.camera-operating-mode |
+| Required Characteristics  | [3.2 EventSnapshotActive](#32-eventsnapshotsactive) <br> [3.3 HomeKitCameraActive](#33-homekitcameraactive) |
+| Optional Characteristics  | &nbsp; &nbsp; &nbsp; Name <br> [3.4 ManuallyDisabled](#34-manuallydisabled) <br> [3.5 NightVision](#35-nightvision) <br> [3.12 ThirdPartyCameraActive](#312-thirdpartycameraactive) <br> [3.1 CameraOperatingModeIndicator](#31-cameraoperatingmodeindicator) <br> [3.6 PeriodicSnapshotsActive](#36-periodicsnapshotsactive) |
+
+### 2.2 CameraRecordingManagement
+
+| Property                  | Value                                |
+| ------------------------- | ------------------------------------ |
+| UUID                      | 00000204-0000-1000-8000-0026BB765291 |
+| Type                      | public.hap.service.camera-recording-management |
+| Required Characteristics  | Active <br> [3.8 SupportedCameraRecordingConfiguration](#38-supportedcamerarecordingconfiguration) <br> [3.9 SupportedVideoRecordingConfiguration](#39-supportedvideorecordingconfiguration) <br> [3.10 SupportedAudioRecordingConfiguration](#310-supportedaudiorecordingconfiguration) <br> [3.11 SelectedCameraRecordingConfiguration](#311-selectedcamerarecordingconfiguration) |
+| Optional Characteristics  | Name <br> [3.7 RecordingAudioActive](#37-recordingaudioactive) |
+
+## 3. Characteristics
+
+### 3.1 CameraOperatingModeIndicator
+
+This characteristic indicates if the camera LED, which shows the current state of the camera (see [states](#active-states)),
+should be turned on.
+
+| Property                  | Value                                |
+| ------------------------- | ------------------------------------ |
+| UUID                      | 0000021D-0000-1000-8000-0026BB765291 |
+| Type                      | public.hap.characteristics.camera-operating-mode-indicator |
+| Permissions               | Paired Read, Paired Write, Notify, Timed Write |
+| Format                    | bool |
+| Valid Values              | 0 - "Hardware LED is disabled" <br> 1 - "Hardware LED is enabled" |
+
+### 3.2 EventSnapshotsActive
+
+This characteristic indicates if the option _"Camera Settings" -> Notifications -> "Allow Snapshots in Notifications"_
+is turned on. If this option is turned on, a notification from this camera sent to anyone in this home, will include
+a snapshot of the motion or activity.
+
+| Property                  | Value                                |
+| ------------------------- | ------------------------------------ |
+| UUID                      | 00000223-0000-1000-8000-0026BB765291 |
+| Type                      | public.hap.characteristics.event-snapshots-active |
+| Permissions               | Paired Read, Paired Write, Notify, Timed Write |
+| Format                    | bool |
+| Valid Values              | 0 - "Snapshots in notifications are turned off" <br> 1 - "Snapshots in notifications are turned on" |
+
+### 3.3 HomeKitCameraActive
+
+This characteristic indicates if the camera should detect activity (Unsure if activity just means motion detection or 
+also button presses for doorbell accessories).
+
+| Property                  | Value                                |
+| ------------------------- | ------------------------------------ |
+| UUID                      | 0000021B-0000-1000-8000-0026BB765291 |
+| Type                      | public.hap.characteristics.homekit-camera-active |
+| Permissions               | Paired Read, Paired Write, Notify, Timed Write |
+| Format                    | bool |
+| Valid Values              | 0 - "Activity detection should not be enabled" <br> 1 - "Activity detection should be enabled" |
+
+### 3.4 ManuallyDisabled
+
+This characteristic indicates if the camera was manually turned off, for example using a physical switch on the camera.
+
+| Property                  | Value                                |
+| ------------------------- | ------------------------------------ |
+| UUID                      | 0000021B-0000-1000-8000-0026BB765291 |
+| Type                      | public.hap.characteristics.manually-disabled |
+| Permissions               | Paired Read, Notify |
+| Format                    | bool |
+| Valid Values              | 0 - "Camera is not manually disabled" <br> 1 - "Camera was manually disabled" |
+
+### 3.5 NightVision
+
+_This characteristic is already present in the current HAP spec_
+This characteristic inidcates if automatic night vision should be turned on.
+
+| Property                  | Value                                |
+| ------------------------- | ------------------------------------ |
+| UUID                      | 0000011B-0000-1000-8000-0026BB765291 |
+| Type                      | public.hap.characteristics.night-vision |
+| Permissions               | Paired Read, Paired Write, Notify |
+| Format                    | bool |
+| Valid Values              | 0 - "Disable night-vision mode" <br> 1 - "Enable night-vision mode" |
+
+### 3.6 PeriodicSnapshotsActive
+
+Exact behaviour unclear. Seems to be always set to `true` regardless of anyone viewing periodic snapshots or not.
+
+| Property                  | Value                                |
+| ------------------------- | ------------------------------------ |
+| UUID                      | 00000225-0000-1000-8000-0026BB765291 |
+| Type                      | public.hap.characteristics.periodic-snapshots-active |
+| Permissions               | Paired Read, Paired Write, Notify, Timed Write |
+| Format                    | bool |
+
+### 3.7 RecordingAudioActive
+
+This characteristic indicates if recordings should include audio.
+
+| Property                  | Value                                |
+| ------------------------- | ------------------------------------ |
+| UUID                      | 00000226-0000-1000-8000-0026BB765291 |
+| Type                      | public.hap.characteristics.recording-audio-active |
+| Permissions               | Paired Read, Paired Write, Notify, Timed Write |
+| Format                    | uint8 |
+| Valid Values              | 0 - "Audio should not be included in recordings" <br> 1 - "Audio recording is active" |
+
+### 3.8 SupportedCameraRecordingConfiguration
+
+| Property                  | Value                                |
+| ------------------------- | ------------------------------------ |
+| UUID                      | 00000204-0000-1000-8000-0026BB765291 |
+| Type                      | public.hap.characteristics.supported-camera-recording-configuration |
+| Permissions               | Paired Read, Notify |
+| Format                    | tlv8 |
+
+A read request on this characteristic returns the following structure:
+
+##### Supported Camera Recording Configuration:
+
+| Type | Name | Format | Description |
+| --- | --- | --- | --- |
+| 1 | Prebuffer length | 1 | Size of the prebuffer in milliseconds. Must be a multiple of the fragment length.<br>(typically 8000ms, double the fragment length) |
+| 2 | Event Trigger Options | 8 | Bitmask of trigger types: <br>  0x01 - Motion <br> 0x02 - Doorbell |
+| 3 | Media Container Configurations | N | List of supported media container configurations. <br>Most cameras out there do only expose one entry. |
+
+##### Media Container Configuration:
+
+| Type | Name | Format | Description |
+| --- | --- | --- | --- |
+| 1 | Media Container Type | 1 | Container types: <br> 0 - Fragmented MP4 |
+| 2 | Media Container Parameters | N | Media container parameters |
+
+##### Media Container Parameters:
+
+| Type | Name | Format | Description |
+| --- | --- | --- | --- |
+| 1 | Fragment Length | 4 | Length of one mp4 fragment in milliseconds<br>(typically 4000ms) |
+
+### 3.9 SupportedVideoRecordingConfiguration
+
+| Property                  | Value                                |
+| ------------------------- | ------------------------------------ |
+| UUID                      | 00000206-0000-1000-8000-0026BB765291 |
+| Type                      | public.hap.characteristics.supported-video-recording-configuration |
+| Permissions               | Paired Read, Notify |
+| Format                    | tlv8 |
+
+The value of this characteristic is a TLV8-endcoded list of supported video codecs:
+
+##### Supported Video Recording Configuration:
+
+| Type | Name | Format | Description |
+| --- | --- | --- | --- |
+| 1 | Codec Configuration | N | Codec information and the configurations supported for the codec<br> There is one TLV of this type per supported codec |
+
+##### Video Codec Configuration:
+
+| Type | Name | Format | Description |
+| --- | --- | --- | --- |
+| 1 | Codec | 1 | Type of video codec:<br>0 - H.264 <br>1 - H-265 |
+| 2 | Video Codec Parameters | N | Video Codec specific parameters |
+| 3 | Video Attributes | N | Video Attributes supported for the codec (tlv list) |
+
+Video Codec Configuration TLV contains exact one tlv of 'Video Codec Parameters' and one entry of
+'Video Attributes' per supported resolution/frame rate combination. 
+
+##### Video Codec Parameters:
+
+| Type | Name | Format | Description |
+| --- | --- | --- | --- |
+| 1 | ProfileID | 1 | List of supported H.264 profiles (tlv list is separated by empty tlvs): <br>0 - Baseline Profile <br>1 - Main Profile <br>2 - High Profile |
+| 2 | Level | 1 | List of supported H.264 levels (tlv list is separated by empty tlvs): <br>0 - 3.1 <br>1 - 3.2 <br>2 - 4 |
+| 3 | Bitrate | 4 | Only present in the Selected Camera Recording Configuration request: <br>Selected video bitrate |
+| 4 | iFrame_Interval | 4 | Only present in the Selected Camera Recording Configuration request: <br>Selected key frame interval in milliseconds. Seems to be the same value as the fragment length. So every mp4 fragment MUST begin with a keyframe |
+
+##### Video Codec Attributes:
+
+| Type | Name | Format | Description |
+| --- | --- | --- | --- |
+| 1 | Image width | 2 | Image width in pixels |
+| 2 | Image height | 2 | Image height in pixels |
+| 3 | Frame rate | 1 | Maximum frame rate |
+
+### 3.10 SupportedAudioRecordingConfiguration
+
+| Property                  | Value                                |
+| ------------------------- | ------------------------------------ |
+| UUID                      | 00000207-0000-1000-8000-0026BB765291 |
+| Type                      | public.hap.characteristics.supported-audio-recording-configuration |
+| Permissions               | Paired Read, Notify |
+| Format                    | tlv8 |
+
+The value of this characteristic is a TLV8-endcoded list of supported audio codecs:
+
+##### Supported Audio Recording Configuration:
+
+| Type | Name | Format | Description |
+| --- | --- | --- | --- |
+| 1 | Codec Configuration | N | Codec information and the configurations supported for the codec<br> There is one TLV of this type per supported codec |
+
+##### Audio Codec Configuration:
+
+| Type | Name | Format | Description |
+| --- | --- | --- | --- |
+| 1 | Codec | 1 | Type of audio codec:<br>0 - AAC-LC <br>1 - AAC-ELD |
+| 2 | Audio Codec Parameters | N | Video Codec specific parameters |
+
+##### Audio Codec Parameters:
+
+| Type | Name | Format | Description |
+| --- | --- | --- | --- |
+| 1 | Channels | 1 | Count of audio channels |
+| 2 | Bitrate Modes | 1 | List (probably empty tlv separated?) of supported audio bitrate modes: <br>0 - Variable <br>1 - Constant |
+| 3 | Sample rates | 1 | List (probably empty tlv separated?) of supported sample rates: <br>0 - 8 kHz <br>1 - 16 kHz <br>2 - 24 kHz <br>3 - 32 kHz <br>4 - 44.1 kHz <br>5 - 48 kHz|
+| 4 | Max Audio Bitrate | 4 | Only present in the Selected Camera Recording Configuration request: <br>maximum selected audio bitrate |
+
+### 3.11 SelectedCameraRecordingConfiguration
+
+| Property                  | Value                                |
+| ------------------------- | ------------------------------------ |
+| UUID                      | 00000209-0000-1000-8000-0026BB765291 |
+| Type                      | public.hap.characteristics.selected-camera-recording-configuration |
+| Permissions               | Paired Read, Paired Write, Notify |
+| Format                    | tlv8 |
+
+The structure of the write value looks like the following:
+
+##### Selected Camera Recording Configuration:
+
+| Type | Name | Format | Description |
+| --- | --- | --- | --- |
+| 1 | Selected General Configuration | N | The selected [recording configuration](#supported-camera-recording-configuration) |
+| 2 | Selected Video Configuration | N | The selected [video recording configuration](#supported-video-recording-configuration) |
+| 3 | Selected Audio Configuration | N | The selected [audio recording configuration](#supported-audio-recording-configuration) |
+
+### 3.12 ThirdPartyCameraActive
+
+_Usage and behaviour of this characteristic is currently pretty unclear._
+
+| Property                  | Value                                |
+| ------------------------- | ------------------------------------ |
+| UUID                      | 0000021C-0000-1000-8000-0026BB765291 |
+| Type                      | public.hap.characteristics.third-party-camera-active |
+| Permissions               | Paired Read, Notify |
+| Format                    | bool |
+
+## 4. HomeKit Data Stream Packet Formats
+### 4.1 Start
+
+When the camera detects motion it will send an hap event for the characteristic as usual.
+After that one of the connected Home Hubs will send a open request.
+
+The header should use `dataSend` as the protocol and `open` as the topic.  
+The **request** has the following message fields:
+
+| Key | Type | Description |
+| --- | ---- | ----------- |
+| target | string | `controller` - to signify the direction of the send |
+| type | string | `ipcamera.recording` - the type of the stream |
+| streamId | int | used to identify this stream; chosen by the controller |
+
+The response has the following message fields:
+
+| Key | Type | Description |
+| --- | ---- | ----------- |
+| status | int | Indicates if stream could be opened. Available codes are unknown: <br> 0 - Success |
+
+### 4.2 Binary Data
+
+The header should use `dataSend` as the protocol and `data` as the topic.
+The **event** has the following message fields:
+
+| Key | Type | Description |
+| --- | ---- | ----------- |
+| streamId | int | Same identifier used in the dataSend.open |
+| packets | array | Array of dictionaries. Usually length = 1 |
+
+A packet dictionary looks like the following:
+
+| Key | Type | Description |
+| --- | ---- | ----------- |
+| data | bytes | Packet data |
+| metadata | dictionary | Metadata for the packet |
+
+Metadata for recording chunks is defined as:
+
+| Key | Type | Description |
+| --- | ---- | ----------- |
+| dataType | string | `mediaInitialization` - for the first event message which contains mp4 initializing `ftyp` and `moof` boxes <br> `mediaFragment` - for all other packets which contains fragmented mp4 segments |
+| dataSequenceNumber | int | Starting by `1` (with the mediaInitialization packet) and incrementing for every mp4 segment |
+| dataChunkSequenceNumber | int | Starting by `1`; enumerates every data chunk of a mp4 segment (if a mp4 segment is to big it can be split in multiple packets using this chunk number) |
+| isLastDataChunk | boolean | `true` when the data chunk is the last for the current sequence/mp4 segment |
+
+### 4.3 Close
+
+This event closes the stream and is sent by the controller once the motion sensor is set back to "No motion detected"
+(It seems that the controller still waits for the last mp4 segment to be sent).  
+The header should use `dataSend` as the protocol and `close` as the topic.
+
+The event has the following message fields:
+
+| Key | Type | Description |
+| --- | ---- | ----------- |
+| streamId | int | Same identifier used in the dataSend.open |
+| reason | int | Example reasons: <br> 0 - Normal - Normal Close <br> 1 - Not Allowed - Controller will not allow the Accessory to send this transfer <br> 2 - Busy - Controller cannot accept this transfer right now <br> 3 - Cancelled - Accessory will not finish the transfer <br> 4 - Unsupported - Controller does not support this stream type <br> 5 - Unexpected Failure - Some other protocol error occurred and the stream has failed <br> 6 - Timeout - Accessory could not start the session |
+
+The accessory can also send this event message to indicate that the session errored unexpectedly and should be aborted.
+
+## 5. Flow of events
+
+In this section I will give a brief overlook on how a activity will be recorded using secure-video.
+
+* The secure-video camera gets paired.
+* It seems like all available Home Hubs will open an HomeKit Data Stream Connection with the accessory
+* The user sets the current [camera state](#active-states) to `Stream & Allow Recording`
+* The configuration of the camera will be set up
+    * The accessory will receive a write request on the
+      [SelectedCameraRecordingConfiguration](#311-selectedcamerarecordingconfiguration) characteristic
+        * Important settings like the prebuffer length are setup
+    * The `Active` characteristic of the [CameraRecordingManagement](#22-camerarecordingmanagement) service will be
+        set to true (and all other active characteristics getting updated according to the [camera state](#active-states))
+* If the camera is set to detect motion it will continuously check the video stream for any movement as usual.
+If recording is enabled the camera will fill the pre buffer with mp4 fragments according to the First-In-Last-Out principle.
+* If the camera detects motion (analogous for doorbell button presses) if will set the `Motion Detected` characteristic
+of the `Motion Sensor` to true
+    * After that a HomeKit controller will initiate a bulk send session over HDS and sends a [`dataSend` `start` request](#41-start)
+    with a new streamId
+    * The camera will now send a [mediaInitialization](#42-binary-data) `dataSend` `data` event. The mp4 data contains a `ftyp` and `moov` box
+        * `dataSequenceNumber`: 1
+        * `dataChunkSequenceNumber`: 1
+        * `isLastDataChunk`: true
+    * After that the actual mp4 fragments are getting sent using [mediaFragment](#42-binary-data) `dataSend` `data` events.
+    The mp4 data contains a `moof` and a `mdata` box and must start with a keyframe.
+    The accessory will begin immediately by sending the fragments currently contained in the prebuffer.
+    After that the accessory will send any newly recorded mp4 fragments when they become available
+    (any fragment will be sent, where the recording was started while motion was still detected).  
+    Every mp4 fragment gets a new incrementally assigned `dataSequenceNumber` (starting by 2 for the first segment in the preBuffer).
+    If the size of one mp4 fragment is too big it can be split into multiple chunks (). Then every chunk is enumerated
+    the `dataChunkSequenceNumber` while the last chunk must always be marked with the `isLastDataChunk` property.
+    Current cameras seems to use a maximum chunk size of 262,144 bytes (or 0x40000 bytes).
+* The HomeKit Home Hub receiving the mp4 fragments will analyze every mp4 fragment for motion and decide,
+according to the configured motion settings, if a given fragment will be saved or not. It will then assemble a 
+recording saved in iCloud from the flagged mp4 fragments.
+* When motion stops the accessory will set the `Motion Detected` characteristic  of the `Motion Sensor` to false.
+The camera will still send out the last mp4 fragment which is currently recorded.
+After a short time the Home Hub will send a [`dataSend` `close` event](#43-close) to indicate that the given 
+transmission for the `streamId` is closed.
+
+Example fmp4 files of an transmitted recording can be found in the [examples](./examples) directory.
+Additionally a full writeup of the transmitted HomeKit Data Stream payloads for the given example can be found 
+[here](./examples/README.md).
