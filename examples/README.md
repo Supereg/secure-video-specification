@@ -10,6 +10,8 @@ In the `fragments` folder the chunks got assembled to a mp4 fragment.
 
 And the `fully-assembled.mp4` file represent the whole recording assembled to one file.
 
+A tool like http://mp4parser.com can be used to look at the boxes contained in the mp4 files.
+
 ## DataStream `dataSend` communication
 
 All HDS payloads below are encoded in json objects which HAP-NodeJS would also use to 
