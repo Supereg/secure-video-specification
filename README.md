@@ -18,10 +18,7 @@ HomeKit Secure-Video cameras need to expose the same services as normal cameras 
 
 #### Doorbells
 
-HomeKit Secure-Video doorbells need to expose the same services as normal doorbells and secure-video cameras
-with the following additional requirements:
-
-* The `CameraRecordingManagement` service (probably) needs to link to the `Doorbell` service.
+HomeKit Secure-Video doorbells need to expose the same services as both doorbells and secure-video cameras.
 
 ### Active states
 
@@ -38,14 +35,14 @@ Depending on the state the following `Active` characteristics for the given serv
 
 ### Recording requirements
 
-* The camera needs so support basic motion analysis
+* The camera needs so support basic motion detection
 * The camera needs to support encoding, buffering and transmitting of fragmented MP4 - Pretty similar to Section 3.3 
 [RFC 8216](https://tools.ietf.org/html/rfc8216#section-3.3) (HLS). The RFC refers to
 [ISO/IEC 14496-12 ISO base media file format](https://mpeg.chiariglione.org/standards/mpeg-4/iso-base-media-file-format/text-isoiec-14496-12-5th-edition).  
 How exactly the data is transmitted can be read
 in the [HDS Packet Formats](#4-homekit-data-stream-packet-formats) section and the [Flow of events](#5-flow-of-events)
 section.
-* Supported video codecs are: h.264, h.265
+* Supported video codecs are: h.264, h.265 (possibly)
 * Supported audio codecs are: AAC-LC, AAC-ELD
 * Supported resolutions:
     * 640x480
@@ -55,7 +52,16 @@ section.
     * 640x360
     * 1280x720
     * 1920x1080
-    * 3840x2160
+    * 3840x2160 (not implemented)
+    * 720x1280
+    * 1080x1920
+    * 1600x1200
+    * 1440x1080
+    * 1200x1600
+    * 1080x1440
+    * 960x1280
+    * 768x1024
+
 
 ## 2. Services
 
@@ -82,7 +88,7 @@ section.
 ### 3.1 CameraOperatingModeIndicator
 
 This characteristic indicates if the camera LED, which shows the current state of the camera (see [states](#active-states)),
-should be turned on.
+should be turned on. Controlled by "Camera status light" setting in the Home App.
 
 | Property                  | Value                                |
 | ------------------------- | ------------------------------------ |
@@ -182,7 +188,7 @@ A read request on this characteristic returns the following structure:
 
 | Type | Name | Format | Description |
 | --- | --- | --- | --- |
-| 1 | Prebuffer length | 1 | Size of the prebuffer in milliseconds. Must be a multiple of the fragment length.<br>(typically 8000ms, double the fragment length) |
+| 1 | Prebuffer length | 1 | Size of the prebuffer in milliseconds. Must be a multiple of the fragment length.<br>(typically 4000-8000ms) |
 | 2 | Event Trigger Options | 8 | Bitmask of trigger types: <br>  0x01 - Motion <br> 0x02 - Doorbell |
 | 3 | Media Container Configurations | N | List of supported media container configurations. <br>Most cameras out there do only expose one entry. |
 
@@ -233,8 +239,8 @@ Video Codec Configuration TLV contains exact one tlv of 'Video Codec Parameters'
 | --- | --- | --- | --- |
 | 1 | ProfileID | 1 | List of supported H.264 profiles (tlv list is separated by empty tlvs): <br>0 - Baseline Profile <br>1 - Main Profile <br>2 - High Profile |
 | 2 | Level | 1 | List of supported H.264 levels (tlv list is separated by empty tlvs): <br>0 - 3.1 <br>1 - 3.2 <br>2 - 4 |
-| 3 | Bitrate | 4 | Only present in the Selected Camera Recording Configuration request: <br>Selected video bitrate |
-| 4 | iFrame_Interval | 4 | Only present in the Selected Camera Recording Configuration request: <br>Selected key frame interval in milliseconds. Seems to be the same value as the fragment length. So every mp4 fragment MUST begin with a keyframe |
+| 3 | Bitrate | 4 | Only present in the Selected Camera Recording Configuration request: <br>Selected video bitrate. Typically, secure video requests 2000kbps when face recognition is enabled, and 800kbps otherwise.   |
+| 4 | iFrame_Interval | 4 | Only present in the Selected Camera Recording Configuration request: <br>Selected key frame interval in milliseconds. Typically 4000ms. Seems to be the same value as the fragment length. So every mp4 fragment MUST begin with a keyframe |
 
 ##### Video Codec Attributes:
 
@@ -318,9 +324,9 @@ The **request** has the following message fields:
 
 | Key | Type | Description |
 | --- | ---- | ----------- |
-| target | string | `controller` - to signify the direction of the send |
+| target | string | `home hub` - to signify the direction of the send |
 | type | string | `ipcamera.recording` - the type of the stream |
-| streamId | int | used to identify this stream; chosen by the controller |
+| streamId | int | used to identify this stream; chosen by the home hub |
 
 The **response** has the following message fields:
 
@@ -356,8 +362,8 @@ Metadata for recording chunks is defined as:
 
 ### 4.3 Close
 
-This event closes the stream and is sent by the controller once the motion sensor is set back to "No motion detected"
-(It seems that the controller still waits for the last mp4 segment to be sent).  
+This event closes the stream and is sent by the home hub once the motion sensor is set back to "No motion detected"
+(It seems that the home hub still waits for the last mp4 segment to be sent).  
 The header should use `dataSend` as the protocol and `close` as the topic.
 
 The **event** has the following message fields:
@@ -365,7 +371,7 @@ The **event** has the following message fields:
 | Key | Type | Description |
 | --- | ---- | ----------- |
 | streamId | int | Same identifier used in the dataSend.open |
-| reason | int | Example reasons: <br> 0 - Normal - Normal Close <br> 1 - Not Allowed - Controller will not allow the Accessory to send this transfer <br> 2 - Busy - Controller cannot accept this transfer right now <br> 3 - Cancelled - Accessory will not finish the transfer <br> 4 - Unsupported - Controller does not support this stream type <br> 5 - Unexpected Failure - Some other protocol error occurred and the stream has failed <br> 6 - Timeout - Accessory could not start the session |
+| reason | int | Example reasons: <br> 0 - Normal - Normal Close <br> 1 - Not Allowed - Home hub will not allow the Accessory to send this transfer <br> 2 - Busy - Home hub cannot accept this transfer right now <br> 3 - Cancelled - Accessory will not finish the transfer <br> 4 - Unsupported - Home hub does not support this stream type <br> 5 - Unexpected Failure - Some other protocol error occurred and the stream has failed <br> 6 - Timeout - Accessory could not start the session |
 
 The accessory can also send this event message to indicate that the session errored unexpectedly and should be aborted.
 
@@ -374,7 +380,7 @@ The accessory can also send this event message to indicate that the session erro
 In this section I will give a brief overlook on how an activity will be recorded using secure-video.
 
 * The secure-video camera gets paired.
-* It seems like all not just one but available Home Hubs will open an HomeKit Data Stream Connection to the accessory
+* All available Home Hubs will open an HomeKit Data Stream Connection to the accessory
 * The user sets the current [camera state](#active-states) to `Stream & Allow Recording`
 * The configuration of the camera will be set up:
     * The accessory will receive a write request on the
@@ -386,7 +392,7 @@ In this section I will give a brief overlook on how an activity will be recorded
 If recording is enabled the camera will fill the pre buffer with mp4 fragments according to the First-In-Last-Out principle.
 * If the camera detects motion (analogous for doorbell button presses) if will set the `Motion Detected` characteristic
 of the `Motion Sensor` to true
-    * After that a HomeKit controller will initiate a bulk send session over HDS and sends a [`dataSend` `start` request](#41-start)
+    * After that a home hub will initiate a bulk send session over HDS and sends a [`dataSend` `start` request](#41-start)
     with a new streamId
     * The camera will now send a [mediaInitialization](#42-binary-data) `dataSend` `data` event with the below listed metadata.
     The mp4 data contains a `ftyp` and `moov` box.
@@ -402,9 +408,10 @@ of the `Motion Sensor` to true
     If the size of one mp4 fragment is too big it can be split into multiple chunks. Then every chunk is enumerated
     by the `dataChunkSequenceNumber`, while the last chunk must always be marked with `isLastDataChunk` equal to true.
     Current cameras seems to use a **maximum chunk size of 262,144 bytes** (or 0x40000 bytes).
-* The HomeKit Home Hub receiving the mp4 fragments will analyze every mp4 fragment for motion and decide,
+* The HomeKit Home Hub receiving the mp4 fragments will analyze every mp4 fragment for moving objects, recognize faces, and decide,
 according to the configured motion settings, if a given fragment will be flagged for motion or not.
-The controller will then assemble a recording from the flagged mp4 fragments and saves it in iCloud.
+The Home Hub will then assemble a recording from the flagged mp4 fragments and save it in iCloud. 
+iCloud will then tell iPhones, iPads, HomePods and AppleTV to notify the user based on their notification settings.  
 * When motion stops the accessory will set the `Motion Detected` characteristic  of the `Motion Sensor` to false.
 The camera will still send out the last mp4 fragment which is currently recorded (remember: typically fixed 4s fragment length).
 After a short time the Home Hub will send a [`dataSend` `close` event](#43-close) to indicate that the given 
