@@ -16,6 +16,8 @@ HomeKit Secure-Video cameras need to expose the same services as normal cameras 
 * The `DataStreamManagement` service is required (to initiate HomeKit Data Stream communication)
 * The `CameraRecordingManagement` service is required. It needs to link to the `MotionSensor` and `DataStreamManagement` service
 
+If `MotionSensor` or `OccupancySensor` are added, they must expose the `Active` characteristic.
+
 #### Doorbells
 
 HomeKit Secure-Video doorbells need to expose the same services as both doorbells and secure-video cameras.
