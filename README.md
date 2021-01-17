@@ -10,7 +10,7 @@ HomeKit Secure-Video cameras need to expose the same services as normal cameras 
 
 * Every `RTPStreamManagement` service must add the `Active` characteristic
 (This is used to indicate that the camera is fully turned off)
-* The required amount of `RTPStreamManagement` services was dropped down from two to one.
+* The required amount of `RTPStreamManagement` services was dropped from two to one.
 * The `MotionSensor` service is required (to indicate movement and thus a start and stop of a recording)
 * The `CameraOperatingMode` service is required
 * The `DataStreamManagement` service is required (to initiate HomeKit Data Stream communication)
@@ -46,7 +46,7 @@ in the [HDS Packet Formats](#4-homekit-data-stream-packet-formats) section and t
 section.
 * Supported video codecs are: h.264, h.265 (possibly)
 * Supported audio codecs are: AAC-LC, AAC-ELD
-* Tyial resolutions one might support (a camera might support more):
+* Typical resolutions one might support (a camera might support more):
     * 640x480
     * 1024x768
     * 1280x960
@@ -56,10 +56,10 @@ section.
     * 1280x720 (Mandatory)
     * 1920x1080 (Mandatory, default at 24 or 30 fps)
     * 3840x2160
-* Frame rates
+* Frame rates:
     * 15 fps (Mandatory)
     * 24 fps
-    * 30 fps (One of 24 fps or 30 fps is mandatroy)
+    * 30 fps (One of 24 fps or 30 fps is mandatory)
 
 
 ## 2. Services
@@ -315,8 +315,8 @@ _Usage and behaviour of this characteristic is currently pretty unclear._
 ## 4. HomeKit Data Stream Packet Formats
 ### 4.1 Start
 
-When the camera detects motion it will send an hap event for the characteristic as usual.
-After that one of the connected Home Hubs will send a open request.
+When the camera detects motion it will send a hap event for the characteristic as usual.
+After that, one of the connected Home Hubs will send an open request.
 
 The header should use `dataSend` as the protocol and `open` as the topic.  
 The **request** has the following message fields:
@@ -388,11 +388,11 @@ In this section I will give a brief overlook on how an activity will be recorded
     * The `Active` characteristic of the [CameraRecordingManagement](#22-camerarecordingmanagement) service will be
         set to true (and all other active characteristics getting updated according to the [camera state](#active-states))
 * If the camera is set to detect motion it will continuously check the video stream for any movement as usual.
-If recording is enabled the camera will fill the pre buffer with mp4 fragments according to the First-In-Last-Out principle.
+If recording is enabled, the camera will fill the pre buffer with mp4 fragments according to the First-In-Last-Out principle.
 * If the camera detects motion (analogous for doorbell button presses) if will set the `Motion Detected` characteristic
 of the `Motion Sensor` to true
-    * After that a home hub will initiate a bulk send session over HDS and sends a [`dataSend` `start` request](#41-start)
-    with a new streamId
+    * After that, a home hub will initiate a bulk send session over HDS and sends a [`dataSend` `start` request](#41-start)
+    with a new streamId.
     * The camera will now send a [mediaInitialization](#42-binary-data) `dataSend` `data` event with the below listed metadata.
     The mp4 data contains a `ftyp` and `moov` box.
         * `dataSequenceNumber`: 1
@@ -404,7 +404,7 @@ of the `Motion Sensor` to true
     After that the accessory will send any newly recorded mp4 fragments (typically 4s in length) when they become available
     (any fragment will be sent, where the recording was started while motion was still detected).  
     Every mp4 fragment gets a new incrementally assigned `dataSequenceNumber` (starting by 2 for the first segment in the preBuffer).
-    If the size of one mp4 fragment is too big it can be split into multiple chunks. Then every chunk is enumerated
+    If the size of one mp4 fragment is too big, it can be split into multiple chunks. Then every chunk is enumerated
     by the `dataChunkSequenceNumber`, while the last chunk must always be marked with `isLastDataChunk` equal to true.
     Current cameras seems to use a **maximum chunk size of 262,144 bytes** (or 0x40000 bytes).
 * The HomeKit Home Hub receiving the mp4 fragments will analyze every mp4 fragment for moving objects, recognize faces, and decide,
@@ -416,6 +416,6 @@ The camera will still send out the last mp4 fragment which is currently recorded
 After a short time the Home Hub will send a [`dataSend` `close` event](#43-close) to indicate that the given 
 transmission for the `streamId` is closed.
 
-Example fmp4 files of an transmitted recording can be found in the [examples](./examples) directory.
-Additionally a full writeup of the transmitted HomeKit Data Stream payloads for the given example can be found 
+Example fmp4 files of a transmitted recording can be found in the [examples](./examples) directory.
+Additionally, a full writeup of the transmitted HomeKit Data Stream payloads for the given example can be found 
 [here](./examples/README.md).
