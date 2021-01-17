@@ -14,7 +14,7 @@ HomeKit Secure-Video cameras need to expose the same services as normal cameras 
 * The `MotionSensor` service is required (to indicate movement and thus a start and stop of a recording)
 * The `CameraOperatingMode` service is required
 * The `DataStreamManagement` service is required (to initiate HomeKit Data Stream communication)
-* The `CameraRecordingManagement` service is required. It needs to link to the `MotionSensor` and `DataStreamManagement` service
+* The `CameraEventRecordingManagement` service is required. It needs to link to the `MotionSensor` and `DataStreamManagement` service
 
 If `MotionSensor` or `OccupancySensor` are added, they must expose the `Active` characteristic.
 
@@ -28,7 +28,7 @@ Every Secure-Video enabled camera can be set to four different states: `Off`, `D
 and `Stream & Allow Recording`.  
 Depending on the state the following `Active` characteristics for the given services are set.
 
-| Camera-States            | RTPStreamManagement `Active` | CameraOperatingMode `HomeKitCameraActive` | CameraRecordingManagement `Active` | 
+| Camera-States            | RTPStreamManagement `Active` | CameraOperatingMode `HomeKitCameraActive` | CameraEventRecordingManagement `Active` | 
 | :----------------------: | :---: | :---: | :---: |
 | Off                      | false | false | false |
 | Detect Activity          | false  | true | false |
@@ -70,17 +70,16 @@ section.
 | ------------------------- | ------------------------------------ |
 | UUID                      | 0000021A-0000-1000-8000-0026BB765291 |
 | Type                      | public.hap.service.camera-operating-mode |
-| Required Characteristics  | [3.2 EventSnapshotActive](#32-eventsnapshotsactive) <br> [3.3 HomeKitCameraActive](#33-homekitcameraactive) |
-| Optional Characteristics  | &nbsp; &nbsp; &nbsp; Name <br> [3.4 ManuallyDisabled](#34-manuallydisabled) <br> [3.5 NightVision](#35-nightvision) <br> [3.12 ThirdPartyCameraActive](#312-thirdpartycameraactive) <br> [3.1 CameraOperatingModeIndicator](#31-cameraoperatingmodeindicator) <br> [3.6 PeriodicSnapshotsActive](#36-periodicsnapshotsactive) |
+| Required Characteristics  | [3.2 EventSnapshotActive](#32-eventsnapshotsactive) <br> [3.3 HomeKitCameraActive](#33-homekitcameraactive) <br> [3.6 PeriodicSnapshotsActive](#36-periodicsnapshotsactive) |
+| Optional Characteristics  | [3.4 ManuallyDisabled](#34-manuallydisabled) <br> [3.5 NightVision](#35-nightvision) <br> [3.12 ThirdPartyCameraActive](#312-thirdpartycameraactive) <br> [3.1 CameraOperatingModeIndicator](#31-cameraoperatingmodeindicator) <br> [3.13 Diagonal Field of View](#313-diagonalfieldofview) |
 
-### 2.2 CameraRecordingManagement
+### 2.2 CameraEventRecordingManagement
 
 | Property                  | Value                                |
 | ------------------------- | ------------------------------------ |
 | UUID                      | 00000204-0000-1000-8000-0026BB765291 |
 | Type                      | public.hap.service.camera-recording-management |
-| Required Characteristics  | Active <br> [3.8 SupportedCameraRecordingConfiguration](#38-supportedcamerarecordingconfiguration) <br> [3.9 SupportedVideoRecordingConfiguration](#39-supportedvideorecordingconfiguration) <br> [3.10 SupportedAudioRecordingConfiguration](#310-supportedaudiorecordingconfiguration) <br> [3.11 SelectedCameraRecordingConfiguration](#311-selectedcamerarecordingconfiguration) |
-| Optional Characteristics  | Name <br> [3.7 RecordingAudioActive](#37-recordingaudioactive) |
+| Required Characteristics  | Active <br> [3.8 SupportedCameraRecordingConfiguration](#38-supportedcamerarecordingconfiguration) <br> [3.9 SupportedVideoRecordingConfiguration](#39-supportedvideorecordingconfiguration) <br> [3.10 SupportedAudioRecordingConfiguration](#310-supportedaudiorecordingconfiguration) <br> [3.11 SelectedCameraRecordingConfiguration](#311-selectedcamerarecordingconfiguration) <br> [3.7 RecordingAudioActive](#37-recordingaudioactive) |
 
 ## 3. Characteristics
 
@@ -312,6 +311,18 @@ _Usage and behaviour of this characteristic is currently pretty unclear._
 | Permissions               | Paired Read, Notify |
 | Format                    | bool |
 
+### 3.13 DiagonalFieldOfView
+
+| Property                  | Value                                |
+| ------------------------- | ------------------------------------ |
+| UUID                      | 00000224-0000-1000-8000-0026BB765291 |
+| Type                      | public.hap.characteristics.diagonal-fov |
+| Permissions               | Paired Read, Notify |
+| Format                    | float |
+| Minimum Value             | 0 |
+| Maximum Value             | 360 |
+| Unit                      | arcdegrees |
+
 ## 4. HomeKit Data Stream Packet Formats
 ### 4.1 Start
 
@@ -404,7 +415,7 @@ In this section I will give a brief overlook on how an activity will be recorded
     * The accessory will receive a write request on the
       [SelectedCameraRecordingConfiguration](#311-selectedcamerarecordingconfiguration) characteristic
         * Important settings like the `prebuffer length` are configured
-    * The `Active` characteristic of the [CameraRecordingManagement](#22-camerarecordingmanagement) service will be
+    * The `Active` characteristic of the [CameraEventRecordingManagement](#22-cameraeventrecordingmanagement) service will be
         set to true (and all other active characteristics getting updated according to the [camera state](#active-states))
 * If the camera is set to detect motion it will continuously check the video stream for any movement as usual.
 If recording is enabled, the camera will fill the pre buffer with mp4 fragments according to the First-In-Last-Out principle.
