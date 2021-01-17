@@ -42,7 +42,7 @@ Depending on the state the following `Active` characteristics for the given serv
 [RFC 8216](https://tools.ietf.org/html/rfc8216#section-3.3) (HLS). The RFC refers to
 [ISO/IEC 14496-12 ISO base media file format](https://mpeg.chiariglione.org/standards/mpeg-4/iso-base-media-file-format/text-isoiec-14496-12-5th-edition).  
 How exactly the data is transmitted can be read
-in the [HDS Packet Formats](#4-homekit-data-stream-packet-formats) section and the [Flow of events](#5-flow-of-events)
+in the [HDS Packet Formats](#4-homekit-data-stream-packet-formats) section and the [Flow of events](#6-flow-of-events)
 section.
 * Supported video codecs are: h.264, h.265 (possibly)
 * Supported audio codecs are: AAC-LC, AAC-ELD
@@ -374,7 +374,26 @@ The **event** has the following message fields:
 
 The accessory can also send this event message to indicate that the session errored unexpectedly and should be aborted.
 
-## 5. Flow of events
+## 5. Image Snapshots
+
+The POST body of the `POST /resource` request received a new optional property `reason` with number type.
+
+With the `reason` property a controller indicates the reason for a snapshot request:
+* `0`: Request is the result of a periodic snapshot request.
+* `1`: Request is the result of an event snapshot (e.g. to display image for a motion event).
+
+If the accessory has [PeriodicSnapshotsActive](#36-periodicsnapshotsactive) turned off, any snapshot request without 
+a `reason` property or the `reason` property set to `0` must be rejected.
+
+If the accessory has [EventSnapshotsActive](#32-eventsnapshotsactive) turned off, any snapshot request without
+a `reason` property or the `reason` property set to `1` must be rejected.
+
+
+When rejecting a snapshot request the accessory must return `HTTP 207 Multi-Status` and
+a HAP Status code of `-70401` (`INSUFFICIENT_PRIVILEGES`; if it was rejected due to the missing `reason` property)
+or `-70412` (`NOT_ALLOWED_IN_CURRENT_STATE`, if the `reason` doesn't match the current set rules).
+
+## 6. Flow of events
 
 In this section I will give a brief overlook on how an activity will be recorded using secure-video.
 
