@@ -44,23 +44,20 @@ in the [HDS Packet Formats](#4-homekit-data-stream-packet-formats) section and t
 section.
 * Supported video codecs are: h.264, h.265 (possibly)
 * Supported audio codecs are: AAC-LC, AAC-ELD
-* Supported resolutions:
+* Tyial resolutions one might support (a camera might support more):
     * 640x480
     * 1024x768
     * 1280x960
+    * 1600x1200
     * 2048x1536
     * 640x360
-    * 1280x720
-    * 1920x1080
-    * 3840x2160 (not implemented)
-    * 720x1280
-    * 1080x1920
-    * 1600x1200
-    * 1440x1080
-    * 1200x1600
-    * 1080x1440
-    * 960x1280
-    * 768x1024
+    * 1280x720 (Mandatory)
+    * 1920x1080 (Mandatory, default at 24 or 30 fps)
+    * 3840x2160
+* Frame rates
+    * 15 fps (Mandatory)
+    * 24 fps
+    * 30 fps (One of 24 fps or 30 fps is mandatroy)
 
 
 ## 2. Services
