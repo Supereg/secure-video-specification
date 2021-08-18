@@ -186,7 +186,7 @@ A read request on this characteristic returns the following structure:
 
 | Type | Name | Format | Description |
 | --- | --- | --- | --- |
-| 1 | Prebuffer length | 1 | Size of the prebuffer in milliseconds. Must be a multiple of the fragment length.<br>(typically 4000-8000ms) |
+| 1 | Prebuffer length | 4 | Size of the prebuffer in milliseconds.<br>It must be at least 4000ms.<br>(typical encountered values: 4000ms, 8000ms) |
 | 2 | Event Trigger Options | 8 | Bitmask of trigger types: <br>  0x01 - Motion <br> 0x02 - Doorbell |
 | 3 | Media Container Configurations | N | List of supported media container configurations. <br>Most cameras out there do only expose one entry. |
 
