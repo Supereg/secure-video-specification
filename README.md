@@ -409,7 +409,6 @@ or `-70412` (`NOT_ALLOWED_IN_CURRENT_STATE`, if the `reason` doesn't match the c
 In this section I will give a brief overlook on how an activity will be recorded using secure-video.
 
 * The secure-video camera gets paired.
-* All available Home Hubs will open an HomeKit Data Stream Connection to the accessory
 * The user sets the current [camera state](#active-states) to `Stream & Allow Recording`
 * The configuration of the camera will be set up:
     * The accessory will receive a write request on the
@@ -419,6 +418,7 @@ In this section I will give a brief overlook on how an activity will be recorded
         set to true (and all other active characteristics getting updated according to the [camera state](#active-states))
 * If the camera is set to detect motion it will continuously check the video stream for any movement as usual.
 If recording is enabled, the camera will fill the pre buffer with mp4 fragments according to the First-In-Last-Out principle.
+* When the motion service reports activity, all available Home Hubs will open an HomeKit Data Stream Connection to the accessory
 * If the camera detects motion (analogous for doorbell button presses) if will set the `Motion Detected` characteristic
 of the `Motion Sensor` to true
     * After that, a home hub will initiate a bulk send session over HDS and sends a [`dataSend` `start` request](#41-start)
