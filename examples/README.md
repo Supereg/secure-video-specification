@@ -65,12 +65,12 @@ Response (Accessory -> Controller):
   "message": {
     "streamId": 1,
     "packets": {
-      "metadata": {
-        "dataType": "mediaInitialization",
-        "dataSequenceNumber": 1,
-        "isLastDataChunk": true,
-        "dataChunkSequenceNumber": 1
-      },
+      "metadata": [{
+          "dataType": "mediaInitialization",
+          "dataSequenceNumber": 1,
+          "isLastDataChunk": true,
+          "dataChunkSequenceNumber": 1
+      }],
       "data": "contents of ./chunks/mediaInitialization.mp4"
     }
   } 
@@ -89,7 +89,7 @@ Response (Accessory -> Controller):
   },
   "message": {
     "streamId": 1,
-    "packets": {
+    "packets": [{
       "metadata": {
         "dataType": "mediaFragment",
         "dataSequenceNumber": 2,
@@ -97,7 +97,7 @@ Response (Accessory -> Controller):
         "dataChunkSequenceNumber": 1
       },
       "data": "contents of ./chunks/sequence2_1.mp4"
-    }
+    }]
   } 
 }
 ```
@@ -111,12 +111,12 @@ Response (Accessory -> Controller):
   "message": {
     "streamId": 1,
     "packets": {
-      "metadata": {
+      "metadata": [{
         "dataType": "mediaFragment",
         "dataSequenceNumber": 2,
         "isLastDataChunk": true,
         "dataChunkSequenceNumber": 2
-      },
+      }],
       "data": "contents of ./chunks/sequence2_2.mp4"
     }
   } 
@@ -134,12 +134,12 @@ Response (Accessory -> Controller):
   "message": {
     "streamId": 1,
     "packets": {
-      "metadata": {
+      "metadata": [{
         "dataType": "mediaFragment",
         "dataSequenceNumber": 3,
         "isLastDataChunk": false,
         "dataChunkSequenceNumber": 1
-      },
+      }],
       "data": "contents of ./chunks/sequence3_1.mp4"
     }
   } 
@@ -155,12 +155,12 @@ Response (Accessory -> Controller):
   "message": {
     "streamId": 1,
     "packets": {
-      "metadata": {
+      "metadata": [{
         "dataType": "mediaFragment",
         "dataSequenceNumber": 3,
         "isLastDataChunk": true,
         "dataChunkSequenceNumber": 2
-      },
+      }],
       "data": "contents of ./chunks/sequence3_2.mp4"
     }
   } 
@@ -180,12 +180,12 @@ Response (Accessory -> Controller):
   "message": {
     "streamId": 1,
     "packets": {
-      "metadata": {
+      "metadata": [{
         "dataType": "mediaFragment",
         "dataSequenceNumber": 4,
         "isLastDataChunk": false,
         "dataChunkSequenceNumber": 1
-      },
+      }],
       "data": "contents of ./chunks/sequence4_1.mp4"
     }
   } 
@@ -201,12 +201,12 @@ Response (Accessory -> Controller):
   "message": {
     "streamId": 1,
     "packets": {
-      "metadata": {
+      "metadata": [{
         "dataType": "mediaFragment",
         "dataSequenceNumber": 4,
         "isLastDataChunk": true,
         "dataChunkSequenceNumber": 2
-      },
+      }],
       "data": "contents of ./chunks/sequence4_2.mp4"
     }
   } 
