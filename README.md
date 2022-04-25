@@ -1,4 +1,4 @@
-# HomeKit Secure Video Unofficial Specification - R2
+# HomeKit Secure Video Unofficial Specification - R3
 
 ## 1. Overview
 
