@@ -129,7 +129,7 @@ This characteristic indicates if the camera was manually turned off, for example
 
 | Property                  | Value                                |
 | ------------------------- | ------------------------------------ |
-| UUID                      | 0000021B-0000-1000-8000-0026BB765291 |
+| UUID                      | 00000227-0000-1000-8000-0026BB765291 |
 | Type                      | public.hap.characteristics.manually-disabled |
 | Permissions               | Paired Read, Notify |
 | Format                    | bool |
@@ -175,7 +175,7 @@ This characteristic indicates if recordings should include audio.
 
 | Property                  | Value                                |
 | ------------------------- | ------------------------------------ |
-| UUID                      | 00000204-0000-1000-8000-0026BB765291 |
+| UUID                      | 00000205-0000-1000-8000-0026BB765291 |
 | Type                      | public.hap.characteristics.supported-camera-recording-configuration |
 | Permissions               | Paired Read, Notify |
 | Format                    | tlv8 |
